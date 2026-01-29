@@ -1,0 +1,57 @@
+-- eCall MSD ASN.1 Schema (EN 15722)
+-- Minimum Set of Data for eCall
+
+ECallMSD DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+MSDMessage ::= SEQUENCE {
+    msdStructure MSDStructure,
+    optionalData OptionalData OPTIONAL
+}
+
+MSDStructure ::= SEQUENCE {
+    messageIdentifier INTEGER (0..255),
+    timestamp INTEGER (0..4294967295),
+    control ControlType,
+    vehicleIdentificationNumber VIN,
+    vehicleType VehiclePropulsionStorageType,
+    vehicleLocation VehicleLocation,
+    vehicleDirection INTEGER (0..255),
+    recentVehicleLocationN1 VehicleLocation OPTIONAL,
+    recentVehicleLocationN2 VehicleLocation OPTIONAL,
+    numberOfPassengers INTEGER (0..255) OPTIONAL,
+    additionalData AdditionalData OPTIONAL
+}
+
+ControlType ::= BIT STRING {
+    automaticActivation(0),
+    testCall(1),
+    positionCanBeTrusted(2),
+    vehicleType(3)
+} (SIZE(8))
+
+VIN ::= SEQUENCE {
+    isowmi PrintableString (SIZE(3)),
+    isovds PrintableString (SIZE(6)),
+    isovisModelyear PrintableString (SIZE(1)),
+    isovisSeqPlant PrintableString (SIZE(7))
+}
+
+VehiclePropulsionStorageType ::= BIT STRING {
+    gasolineTank(0),
+    dieselTank(1),
+    compressedNaturalGas(2),
+    liquidPropaneGas(3),
+    electricEnergyStorage(4),
+    hydrogenStorage(5)
+} (SIZE(7))
+
+VehicleLocation ::= SEQUENCE {
+    latitudeDelta INTEGER (-2048..2047),
+    longitudeDelta INTEGER (-2048..2047)
+}
+
+AdditionalData ::= SEQUENCE (SIZE(1..255)) OF INTEGER (0..255)
+
+OptionalData ::= SEQUENCE (SIZE(1..1024)) OF INTEGER (0..255)
+
+END
