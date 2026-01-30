@@ -329,7 +329,22 @@ For PSAP test record issues:
 5. Compare with known-good MSD samples
 
 
+ [T-E-C]:MSD data collect start...
+ [T-E-C]:MSD[1]:vehicleType[1]
+T-E-C]:MSD[2] VIN:LGWEC24ECALL08071
+T-E-C]:MSD[3]:gasolineTankPresent[0], dieselTankPresent[0], compressedNaturalGas[0], liquidPropaneGas[0],electricEnergyStorage[1], hydrogenStorage[0],otherStorage[0]
+T-E-C]:MSD[4]:timestamp[802],positionCanBeTrusted[0], positionLatitude[2147483647], positionLongitude[2147483647], recentVehicleLocationN1_latitudeDelta[0],recentVehicleLocationN1_longitudeDelta[0], recentVehicleLocationN2_latitudeDelta[0],recentVehicleLocationN2_longitudeDelta[0]
+T-E-C]:MSD[5]:rolloverDetected[1], locationOfImpact[4], deltaVX [-21], deltaVY[12],crashType[32], alertType[1], language[2]
+T-E-C]:MSD[6]:vehicleDirection[255]
+T-E-C]:MSD[7]:numberOfPassengers[3]
+[T-E-C]:MSD data collect end...
+[MM_SMS]:msdInfo.timestamp: 802
+[MM_SMS]:msdInfo.vehicleDirection: 255 To default0
+[T-E-C]:Set MSD, dataLen: 0data:
+ [E-C]:ecall_msd_data_encode :messageIdentifier[1], automaticActivation[0], testCall[0]
+ [E-C]:MSD data encode end, msd length :47
+ [E-C]:Set MSD, dataLen: 94data:022D5C0401441D38C08438C2945002001C17F0800000645FFFFFFFFFFFFFFFFFF00401004000604100208A434D7180
+ [MM]:EU-CallStart MSD len = 47
+ [MM]:CallStart MSD : [ 0x02 0x2d 0x5c 0x04 0x01 0x44 0x1d 0x38 0xc0 0x84 0x38 0xc2 0x94 0x50 0x02 0x00 0x1c 0x17 0xf0 0x80 0x00 0x00 0x64 0x5f 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xf0 0x04 0x01 0x00 0x40 0x00 0x60 0x41 0x00 0x20 0x8a 0x43 0x4d 0x71 0x80]
 
-02 2D 5C 04 01 44 1D 38 C0 84 38 C2 94 50 02 00 1C 17 F0 80 00 00 53 1F FF FF FF FF FF FF FF FF F0 04 01 00 40 00 60 41 00 20 8A 43 4D 71 80
 
-0x02 0x2D 0x5C 0x04 0x01 0x44 0x1D 0x38 0xC0 0x84 0x38 0xC2 0x94 0x50 0x02 0x00 0x1C 0x17 0xF0 0x80 0x00 0x00 0x53 0x1F 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF 0xFF 0xF0 0x04 0x01 0x00 0x40 0x00 0x60 0x41 0x00 0x20 0x8A 0x43 0x4D 0x71 0x80
