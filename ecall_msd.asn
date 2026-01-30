@@ -1,57 +1,93 @@
--- eCall MSD ASN.1 Schema (EN 15722)
+-- eCall MSD ASN.1 Schema (EN 15722:2019)
 -- Minimum Set of Data for eCall
+-- Based on actual eCall MSD standard structure
 
 ECallMSD DEFINITIONS AUTOMATIC TAGS ::= BEGIN
 
+-- Top-level MSD Message
+CurrentVersion::=INTEGER(2)
+
+ECallMessage ::= SEQUENCE{
+    msdVersion      INTEGER(0..255),
+    msd OCTET STRING (CONTAINING MSDMessage)
+}
+
+
 MSDMessage ::= SEQUENCE {
     msdStructure MSDStructure,
-    optionalData OptionalData OPTIONAL
+    optionalData OCTET STRING (SIZE(1..1400)) OPTIONAL
 }
 
+-- Core MSD Structure
 MSDStructure ::= SEQUENCE {
     messageIdentifier INTEGER (0..255),
-    timestamp INTEGER (0..4294967295),
     control ControlType,
     vehicleIdentificationNumber VIN,
-    vehicleType VehiclePropulsionStorageType,
+    vehiclePropulsionStorageType VehiclePropulsionStorageType,
+    timestamp INTEGER (0..4294967295),
     vehicleLocation VehicleLocation,
     vehicleDirection INTEGER (0..255),
-    recentVehicleLocationN1 VehicleLocation OPTIONAL,
-    recentVehicleLocationN2 VehicleLocation OPTIONAL,
+    recentVehicleLocationN1 VehicleLocationDelta OPTIONAL,
+    recentVehicleLocationN2 VehicleLocationDelta OPTIONAL,
     numberOfPassengers INTEGER (0..255) OPTIONAL,
-    additionalData AdditionalData OPTIONAL
+    additionalData OCTET STRING (SIZE(1..255)) OPTIONAL
 }
 
-ControlType ::= BIT STRING {
-    automaticActivation(0),
-    testCall(1),
-    positionCanBeTrusted(2),
-    vehicleType(3)
-} (SIZE(8))
+-- Control Bits
+ControlType ::= SEQUENCE {
+    automaticActivation     BOOLEAN,
+    testCall                BOOLEAN,
+    positionCanBeTrusted    BOOLEAN,
+    vehicleType             VehicleType
+} 
+
+-- Vehicle Identification Number (17 characters per ISO 3779)
+
+VehiclePropulsionStorageType ::= SEQUENCE{
+    gasolineTankPresent         BOOLEAN DEFAULT FALSE,
+    dieselTankPresent           BOOLEAN DEFAULT FALSE,
+    compressedNaturalGas        BOOLEAN DEFAULT FALSE,
+    liquidPropaneGas            BOOLEAN DEFAULT FALSE,
+    hydrogenStorage             BOOLEAN DEFAULT FALSE,
+    otherStorage                BOOLEAN DEFAULT FALSE,
+    ...
+}
 
 VIN ::= SEQUENCE {
-    isowmi PrintableString (SIZE(3)),
+    isowmin PrintableString (SIZE(3)),
     isovds PrintableString (SIZE(6)),
     isovisModelyear PrintableString (SIZE(1)),
     isovisSeqPlant PrintableString (SIZE(7))
 }
 
-VehiclePropulsionStorageType ::= BIT STRING {
-    gasolineTank(0),
-    dieselTank(1),
-    compressedNaturalGas(2),
-    liquidPropaneGas(3),
-    electricEnergyStorage(4),
-    hydrogenStorage(5)
-} (SIZE(7))
+-- Vehicle Type and Propulsion/Storage
+VehicleType ::= ENUMERATED {
+    passengerVehicleClassM1 (1),
+    passengerVehicleClassM2 (2),
+    passengerVehicleClassM3 (3),
+    lightCommercialVehicleClassM1   (4),
+    heavyDutyVehicleClassN2 (5),
+    heavyDutyVehicleClassN3 (6),
+    motorcycleClassL1e  (7),
+    motorcycleClassL2e  (8),
+    motorcycleClassL3e  (9)
+} 
 
+-- Vehicle Location (Latitude and Longitude deltas in 1/10 second precision)
 VehicleLocation ::= SEQUENCE {
-    latitudeDelta INTEGER (-2048..2047),
-    longitudeDelta INTEGER (-2048..2047)
+    positionLatitude        INTEGER (-2147483648..2147483647),
+    positionLongitude       INTEGER (-2147483648..2147483647),
+    ...
 }
 
-AdditionalData ::= SEQUENCE (SIZE(1..255)) OF INTEGER (0..255)
+VehicleLocationDelta ::= SEQUENCE {
+    latitudeDelta       INTEGER (-512..511),
+    longitudeDelta      INTEGER (-512..511)
+}
 
-OptionalData ::= SEQUENCE (SIZE(1..1024)) OF INTEGER (0..255)
+AdditionalData ::= SEQUENCE {
+    oid         OBJECT IDENTIFIER,
+    data        OCTET STRING
+}
 
 END

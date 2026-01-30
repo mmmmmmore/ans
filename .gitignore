@@ -1,1 +1,75 @@
+# Build directories
+build/
+cmake-build-debug/
+cmake-build-release/
+cmake-build-*/
+dist/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Python virtual environment
 /.venv
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+.venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.code-workspace
+*.user
+*.pro.user*
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Generated ASN.1 files
+asn1_generated/
+
+# Large files and archives
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.bak
+
+# OS-specific
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Executables
+ecall-msd-tool
+ecall-msd-test
+*.out
+*.app
+
+# Test output
+test_results/
+test_output/

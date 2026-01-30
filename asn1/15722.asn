@@ -1,0 +1,258 @@
+MSDASN1Module   
+-- Definition of the eCall related MSD message in ASN.1 
+-- Any MSD message will encoded using this scheme, following the 
+-- UPER encoding rules. 
+-- 
+-- The MSD message is defined in CEN standard EN 15722.  
+-- Comments in this definition are taken from that standard. In 
+-- case of inconsistency in the comment, the text of EN 15722 
+-- prevails.  
+DEFINITIONS  
+AUTOMATIC TAGS ::=  
+BEGIN    
+
+-- Version of this ASN.1 MSD specification  
+-- (inclusion of this element allows software developers to  
+-- automatically read out the current version number from the ASN.1  
+-- compilation for automatic inclusion into the msdVersion parameter  
+-- of the MSD message, i.e. can reduce the chance of using an ASN.1  
+-- description of one version but saying it is another)  
+
+CurrentVersion::= INTEGER (3)  
+-- ECallMessage is the top level information element  
+-- The ECallMessage structure supports only one message type (msd)   
+-- Extendibility at this level is not allowed, thus ensuring that the  
+-- msdVersion (message format version) can be extracted directly.  
+-- Elements:  
+--   msdVersion:   MSD format version 
+--                 The format described in this document carries version 3 
+--   msd:          Minimum Set Of Data uplink from vehicle 
+-- 
+-- The OCTET STRING (CONTAINING ...) construct is used to ensure that any 
+-- implementation can extract the msdVersion value from any version,  
+-- without decoding errors.  
+
+ECallMessage ::= SEQUENCE {    
+    msdVersion  INTEGER(0 .. 255),    
+    msd         OCTET STRING (CONTAINING MSDMessage) 
+}
+
+-- The main uplink msd message from the vehicle 
+-- Elements:  
+--   msdStructure: The main MSD structure  
+--   optionalAdditionalData: Additional data
+-- Extendable in future versions at this level e.g. to add extra data  
+--  
+
+MSDMessage ::= SEQUENCE {    
+    msdStructure           MSDStructure,    
+    optionalAdditionalData AdditionalData OPTIONAL,    ...   
+}    
+
+-- The main MSD structure, excluding additional data  
+-- Elements:  
+--   messageIdentifier: Message identifier, starting with 1 for each  
+--                      new eCall session and to be incremented with  
+--                      every application layer MSD retransmission  
+--   control:           see ControlType  
+--   vehicleIdentificationNumber:  see VIN  
+--   vehiclePropulsionStorageType: see VehiclePropulsionStorageType  
+--   timestamp: Timestamp of incident event  
+--              As seconds elapsed since midnight January 1st, 1970 UTC.  
+--              Failure value for time stamp set to “0”  
+--   vehicleLocation:  see VehicleLocation  
+--   vehicleDirection: Direction of travel   
+--                     in 2°-degrees steps from either magnetic or 
+--                     geographical north (0– 358, clockwise)  
+--                     If direction of travel is invalid or unknown,  
+--                     the value 255 shall be used  
+--                     Only values from 0 to 179 and 255 are valid.  
+--   recentVehicleLocationN1: location delta with respect to  
+--                            vehicleLocation  
+--                            see VehicleLocationDelta  
+--   recentVehicleLocationN2: location delta with respect to  
+--                            recentVehicleLocationN1  
+--                            see VehicleLocationDelta  
+--   numberOfOccupants: Number of occupants in the vehicle according  
+--                       to available information.        
+--                       If no information about the number of  
+--                       occupants is available, this parameter needs  
+--                       to be omitted or set to 255. 
+--  
+
+MSDStructure  ::= SEQUENCE {    
+    messageIdentifier             INTEGER(0 .. 255),    
+    control                       ControlType,    
+    vehicleIdentificationNumber   VIN,    
+    vehiclePropulsionStorageType  VehiclePropulsionStorageType,    
+    timestamp                     INTEGER(0 .. 4294967295),    
+    vehicleLocation               VehicleLocation,    
+    vehicleDirection              INTEGER(0 .. 179 | 255),    
+    recentVehicleLocationN1       VehicleLocationDelta,    
+    recentVehicleLocationN2       VehicleLocationDelta,    
+    numberOfOccupants            INTEGER(0 .. 255) OPTIONAL,    
+    ...  
+}  
+
+-- The ControlType is a collection of the following elements:  
+-- Elements:  
+--   automaticActivation:  true = Automatic activation,   
+--                         false = Manual activation   
+--   testCall:             true = Test call, false = Emergency  
+--   positionCanBeTrusted: true = Position can be trusted,  
+--                         false = low confidence in position  
+--                         NOTE “Low confidence in position”
+--                         shall mean that there is less than 95%  
+--                         confidence that exact position is  
+--                         within the limits of a radius of ±150m 
+--                         of reported position 
+--   vehicleType:          see VehicleType   
+
+ControlType ::= SEQUENCE {   
+    automaticActivation  BOOLEAN,   
+    testCall             BOOLEAN,   
+    positionCanBeTrusted BOOLEAN,   
+    vehicleType          VehicleType  
+}   
+-- Definition of the vehicle type reporting the incident.  
+-- NOTE: Vehicle definitions category M, N according directive 2007/46/EC;  
+--       category L according directive 2002/24/EC, other categories 
+--       according to UNECE UNECE TRANS/WP.29/78/Rev.4 (2016) World Forum for 
+--       Harmonization of Vehicle Regulations; Consolidated Resolution on the 
+--       Construction of Vehicles (R.E.3) 
+-- NOTE: The normal encoding of the MSD is ASN.1 UPER in which case the  
+--       numerical values specified below are ignored 
+-- 
+-- Extendable in future versions for new vehicle types. Implementations 
+-- should anticipate on receiving an unknown value.   
+
+VehicleType ::= ENUMERATED{    
+    passengerVehicleCategoryM1 (1),    
+    busesAndCoachesCategoryM2 (2),    
+    busesAndCoachesCategoryM3 (3),    
+    lightCommercialVehiclesN1 (4),    
+    heavyDutyVehiclesCategoryN2 (5),    
+    heavyDutyVehiclesCategoryN3 (6),    
+    motorcyclesCategoryL1e (7), 
+    motorcyclesCategoryL2e (8),    
+    motorcyclesCategoryL3e (9),    
+    motorcyclesCategoryL4e (10),    
+    motorcyclesCategoryL5e (11),    
+    motorcyclesCategoryL6e (12),    
+    motorcyclesCategoryL7e (13),     
+    trailersCategoryO (14),    
+    agriVehiclesCategoryR (15),    
+    agriVehiclesCategoryS (16),    
+    agriVehiclesCategoryT (17),    
+    offRoadVehiclesCategoryG (18),    
+    specialPurposeMotorCaravanCategorySA (19),   
+    specialPurposeArmouredVehicleCategorySB (20),    
+    specialPurposeAmbulanceCategorySC (21),    
+    specialPurposeHearseCategorySD (22),    
+    otherVehicleCategory  (23),    
+    ... 
+}  
+-- VIN (vehicle identification number) according ISO 3779  
+--   isowmi: World Manufacturer Index (WMI)  
+--   isovds: Vehicle Type Descriptor (VDS)  
+--   Vehicle Identifier Section (VIS) consisting of   
+--     isovisModelyear: Modelyear from Vehicle Identifier Section (VIS)   
+--     isovisSeqPlant:  Plant code + sequential number   
+--                      from Vehicle Identifier Section (VIS)    
+VIN ::= SEQUENCE {  
+    isowmi          PrintableString (SIZE(3)) 
+(FROM("A".."H"|"J".."N"|"P"|"R".."Z"|"0".."9")),   
+    isovds          PrintableString (SIZE(6)) 
+(FROM("A".."H"|"J".."N"|"P"|"R".."Z"|"0".."9")),   
+    isovisModelyear PrintableString (SIZE(1)) 
+(FROM("A".."H"|"J".."N"|"P"|"R".."Z"|"0".."9")),   
+    isovisSeqPlant  PrintableString (SIZE(7)) 
+(FROM("A".."H"|"J".."N"|"P"|"R".."Z"|"0".."9"))   
+}  
+
+-- VehiclePropulsionStorageType is a collection of elements 
+-- that contain information about the presence of propulsion 
+-- storage inside the vehicle sending the MSD.  
+-- 
+-- For each storage type the following coding applies:  
+--   false  = indicates a type of storage not present  
+--   true = indicates type of storage which is present  
+-- The following storage types are supported:  
+--   Gasoline tank  
+--   Diesel tank  
+--   Compressed natural gas (CNG)  
+--   Liquid propane gas (LPG)  
+--   Electric energy storage (vehicle has electric  
+--      propulsion and associated batteries)  
+--   Hydrogen storage  
+--   other storage 
+-- If the type of energy storage is unknown, then all elements 
+-- shall be set to false. 
+-- Extendible in future versions for new fuel storage types   
+
+VehiclePropulsionStorageType ::= SEQUENCE {   
+    gasolineTankPresent   BOOLEAN DEFAULT FALSE,   
+    dieselTankPresent     BOOLEAN DEFAULT FALSE,   
+    compressedNaturalGas  BOOLEAN DEFAULT FALSE,   
+    liquidPropaneGas      BOOLEAN DEFAULT FALSE,   
+    electricEnergyStorage BOOLEAN DEFAULT FALSE,   
+    hydrogenStorage       BOOLEAN DEFAULT FALSE,   
+    otherStorage          BOOLEAN DEFAULT FALSE,  
+    ...  
+}  
+-- VehicleLocation:   
+-- The current location of the vehicle  
+-- Elements: 
+--  Position latitude (WGS84) in milliarcsec 
+--  Position longitude (WGS84) in milliarcsec 
+--   32 bits (4 octets) allocated to make signed value handling easier  
+-- 
+--  If latitude and/or longitude is invalid or unknown,  
+--  the representation of value 2147483647 shall be transmitted.  
+-- 
+
+VehicleLocation  ::= SEQUENCE { 
+--   Actual valid value range (-324000000 to 324000000)    
+    positionLatitude  INTEGER(-2147483648..2147483647), 
+--   Actual valid value range (-648000000 to 648000000)   
+positionLongitude INTEGER(-2147483648..2147483647)  
+}   
+
+-- VehicleLocationDelta:  
+-- Description of (the delta of) a recent vehicle location  
+-- before the incident
+--  Latitude Delta (+ for North and – for South)  
+--  Longitude Delta (+ for East and – for West)  
+--  both with respect to a previous location. 
+--   1 Unit = 100 miliarcseconds, which is approximately 3m   
+
+VehicleLocationDelta ::= SEQUENCE {   
+    latitudeDelta  INTEGER (-512..511),    
+    longitudeDelta INTEGER (-512..511)   
+}  
+
+-- AdditionalData:   
+-- Further additional bytes of data encoded as in a   
+-- seperate ASN.1 definition  
+--  
+-- Elements:  
+--   oid: Object identifier which uniquely identifies the format   
+--        and meaning of the data which follows.  
+--   data:Transparent optional additional data,   
+--        according to the format referenced by the oid  
+--        The user must ensure that the size of this element   
+--        is restricted to ensure that the total ECallMessage is   
+--        small enough for the relevant transmission medium.   
+
+AdditionalData ::= SEQUENCE {   
+    oid  OBJECT IDENTIFIER,   
+    data OCTET STRING 
+}   
+
+-- Several of the elements above are "extendable"   
+-- according to the ASN.1 standard to facilitate future extensions   
+-- whilst also maintaining backwards compatibility. Implementations 
+-- must provision for such extensions    
+
+
+END 
