@@ -6,6 +6,11 @@
 #include <vector>
 #include <map>
 
+// Forward declaration
+extern "C" {
+    typedef struct MSDMessage MSDMessage_t;
+}
+
 struct DecodedMSD {
     uint8_t msd_version;
     uint8_t message_id;
@@ -63,8 +68,16 @@ public:
      * Convert vehicle direction to degrees
      */
     static float directionToDegrees(uint16_t direction);
-    
+
 private:
+    /**
+     * Extract decoded data from MSDMessage pointer
+     */
+    static DecodedMSD extractDecodedData(MSDMessage_t *message);
+    
+    /**
+     * Convert hex string to binary
+     */
     std::vector<uint8_t> hex_to_binary(const std::string& hex_string);
 };
 

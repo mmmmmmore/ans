@@ -14,6 +14,7 @@ extern "C" {
     #include "MSDStructure.h"
     #include "asn_application.h"
     #include "per_decoder.h"
+    #include "ber_decoder.h"
 }
 
 Decoder::Decoder() {
@@ -56,54 +57,93 @@ DecodedMSD Decoder::decodeMessageBinary(const std::vector<uint8_t>& binary_data)
     DecodedMSD result = {};
     
     try {
-        // Try to decode as ECallMessage first (may have version wrapper)
-        ECallMessage_t *ecall_msg = nullptr;
-        asn_dec_rval_t rval = uper_decode(
-            nullptr,                                    // Optional codec context
-            &asn_DEF_ECallMessage,                     // Try ECallMessage first
-            (void**)&ecall_msg,                        // Output pointer
-            binary_data.data(),                        // Input buffer
-            binary_data.size(),                        // Buffer size in bytes
-            0,                                         // No skip bits
-            0                                          // No unused tailing bits
+        MSDMessage_t *message = nullptr;
+        asn_dec_rval_t rval = {RC_FAIL, 0};
+        
+        // Step 0: First try direct UPER decode as raw MSDMessage (some devices use this)
+        rval = uper_decode(
+            nullptr,
+            &asn_DEF_MSDMessage,
+            (void**)&message,
+            binary_data.data(),
+            binary_data.size(),
+            0, 0
         );
         
-        MSDMessage_t *message = nullptr;
+        if (rval.code == RC_OK && message) {
+            return extractDecodedData(message);
+        }
+        
+        // Step 1: Try to decode as ECallMessage using UPER (our encoder format)
+        ECallMessage_t *ecall_msg = nullptr;
+        rval = uper_decode(
+            nullptr,
+            &asn_DEF_ECallMessage,
+            (void**)&ecall_msg,
+            binary_data.data(),
+            binary_data.size(),
+            0, 0
+        );
         
         if (rval.code == RC_OK && ecall_msg && ecall_msg->msd.buf && ecall_msg->msd.size > 0) {
-            // Successfully decoded as ECallMessage, now decode the MSD content
+            // Extract MSD content (which is UPER-encoded MSDMessage)
             rval = uper_decode(
                 nullptr,
                 &asn_DEF_MSDMessage,
                 (void**)&message,
                 ecall_msg->msd.buf,
                 ecall_msg->msd.size,
-                0,
-                0
+                0, 0
             );
             ASN_STRUCT_FREE(asn_DEF_ECallMessage, ecall_msg);
-        } else {
-            // Try decoding directly as MSDMessage
+            
+            if (rval.code == RC_OK && message) {
+                return extractDecodedData(message);
+            }
+        }
+        
+        // Step 2: If ECallMessage decode failed, try BER-encoded ECallMessage
+        ecall_msg = nullptr;
+        rval = ber_decode(
+            nullptr,
+            &asn_DEF_ECallMessage,
+            (void**)&ecall_msg,
+            binary_data.data(),
+            binary_data.size()
+        );
+        
+        if (rval.code == RC_OK && ecall_msg && ecall_msg->msd.buf && ecall_msg->msd.size > 0) {
+            // Try to decode MSD as UPER-encoded MSDMessage
             rval = uper_decode(
                 nullptr,
                 &asn_DEF_MSDMessage,
                 (void**)&message,
-                binary_data.data(),
-                binary_data.size(),
-                0,
-                0
+                ecall_msg->msd.buf,
+                ecall_msg->msd.size,
+                0, 0
             );
+            ASN_STRUCT_FREE(asn_DEF_ECallMessage, ecall_msg);
+            
+            if (rval.code == RC_OK && message) {
+                return extractDecodedData(message);
+            }
         }
         
-        if (rval.code != RC_OK) {
-            throw std::runtime_error("UPER decoding failed (RC_OK not returned)");
-        }
+        throw std::runtime_error("All decode strategies failed: raw UPER MSDMessage, UPER ECallMessage, BER ECallMessage");
         
-        if (!message) {
-            throw std::runtime_error("Invalid message structure");
-        }
-        
-        MSDStructure_t *msd = &message->msdStructure;
+    } catch (const std::exception& e) {
+        throw std::runtime_error(std::string("Decoding failed: ") + e.what());
+    }
+}
+
+DecodedMSD Decoder::extractDecodedData(MSDMessage_t *message) {
+    DecodedMSD result = {};
+    
+    if (!message) {
+        throw std::runtime_error("Invalid message pointer");
+    }
+    
+    MSDStructure_t *msd = &message->msdStructure;
         
         // Extract message identifier
         result.msd_version = 3;
@@ -188,10 +228,6 @@ DecodedMSD Decoder::decodeMessageBinary(const std::vector<uint8_t>& binary_data)
         ASN_STRUCT_FREE(asn_DEF_MSDMessage, message);
         
         return result;
-        
-    } catch (const std::exception& e) {
-        throw std::runtime_error(std::string("Decoding failed: ") + e.what());
-    }
 }
 
 std::string Decoder::getVehicleTypeName(int vehicle_type) {
